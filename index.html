@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Surfland - Funil Spotter + Meta Ads</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f7f5; color: #2c2c2a; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .header { background: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .header h1 { font-size: 28px; margin-bottom: 0.5rem; color: #26215c; }
+    .header p { font-size: 14px; color: #888780; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .kpi-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #534AB7; }
+    .kpi-label { font-size: 12px; color: #888780; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; }
+    .kpi-value { font-size: 32px; font-weight: 600; color: #26215c; }
+    .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
+    .chart-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .chart-title { font-size: 14px; font-weight: 600; color: #26215c; margin-bottom: 1rem; }
+    .insights { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 2rem; }
+    .insights h3 { font-size: 16px; font-weight: 600; color: #26215c; margin-bottom: 1rem; }
+    .insight-item { padding: 0.75rem 0; border-bottom: 1px solid #f1efe8; font-size: 13px; color: #5F5E5A; }
+    .loading { text-align: center; padding: 2rem; color: #888780; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Dashboard Surfland</h1>
+      <p>Visão em tempo real: Funil Spotter + Meta Ads + Agendamentos</p>
+    </div>
+    <div class="kpis" id="kpis"><div class="loading">Carregando dados...</div></div>
+    <div class="charts" id="charts">
+      <div class="chart-card"><h3 class="chart-title">Leads por dia (últimos 30 dias)</h3><div style="position: relative; height: 280px;"><canvas id="leadsChart"></canvas></div></div>
+      <div class="chart-card"><h3 class="chart-title">Distribuição por origem</h3><div style="position: relative; height: 280px;"><canvas id="origensChart"></canvas></div></div>
+      <div class="chart-card"><h3 class="chart-title">Performance Meta Ads</h3><div style="position: relative; height: 280px;"><canvas id="metaChart"></canvas></div></div>
+      <div class="chart-card"><h3 class="chart-title">Funil de conversão</h3><div style="position: relative; height: 280px;"><canvas id="funilChart"></canvas></div></div>
+    </div>
+    <div class="insights"><h3>📈 Insights & Recomendações</h3><div id="insightsList">Calculando insights...</div></div>
+  </div>
+
+  <script>
+    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwpE9M1eZmAENUfONSp0KXwsJNTseuG_esIeHWxgkPuza1LAWdO4sy3xwpfc1UAWrdq/exec';
+
+    async function loadDashboard() {
+      try {
+        const res = await fetch(BACKEND_URL);
+        const data = await res.json();
+        const spotter = data.spotter || {};
+        const sheets = data.sheets || {};
+        const meta = data.meta || {};
+        const leads = spotter.Leads || [];
+        renderKPIs(leads, sheets.data || [], meta.data || []);
+        renderLeadsChart(leads);
+        renderOrigensChart(leads);
+        renderMetaChart(meta.data || []);
+        renderFunilChart(leads);
+        renderInsights(leads, sheets.data || [], meta.data || []);
+      } catch (error) {
+        document.getElementById('kpis').innerHTML = '<div class="loading" style="color: #A32D2D;">❌ Erro ao carregar</div>';
+      }
+    }
+
+    function renderKPIs(leads, sheets, meta) {
+      const total = leads.length;
+      const novo = leads.filter(l => l.Novo === true).length;
+      const metaData = meta[0] || {};
+      const metaLeads = metaData.actions?.[0]?.value || 0;
+      const cac = metaData.spend && metaLeads > 0 ? (metaData.spend / metaLeads).toFixed(2) : '—';
+      const taxa = total > 0 ? ((novo / total) * 100).toFixed(1) : '0';
+      document.getElementById('kpis').innerHTML = `
+        <div class="kpi-card"><div class="kpi-label">Total de leads</div><div class="kpi-value">${total}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Leads novos</div><div class="kpi-value">${novo}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Taxa conversão</div><div class="kpi-value">${taxa}%</div></div>
+        <div class="kpi-card"><div class="kpi-label">CAC médio</div><div class="kpi-value">R$ ${cac}</div></div>
+      `;
+    }
+
+    function renderLeadsChart(leads) {
+      const last30 = Array.from({length: 30}, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (29 - i));
+        return { label: d.toLocaleDateString('pt-BR', {month: 'short', day: 'numeric'}), count: 0 };
+      });
+      leads.forEach(l => {
+        const d = new Date(l.UpdatedAt || new Date());
+        const day = d.toLocaleDateString('pt-BR', {month: 'short', day: 'numeric'});
+        const idx = last30.findIndex(x => x.label === day);
+        if (idx >= 0) last30[idx].count++;
+      });
+      new Chart(document.getElementById('leadsChart'), {
+        type: 'line',
+        data: {
+          labels: last30.map(d => d.label),
+          datasets: [{label: 'Leads', data: last30.map(d => d.count), borderColor: '#534AB7', backgroundColor: 'rgba(83,74,183,0.08)', borderWidth: 2, tension: 0.3, fill: true}]
+        },
+        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true}}}
+      });
+    }
+
+    function renderOrigensChart(leads) {
+      const origens = {};
+      leads.forEach(l => {
+        const o = l.Complemento || 'Sem origem';
+        origens[o] = (origens[o] || 0) + 1;
+      });
+      const colors = ['#534AB7', '#0F6E56', '#BA7517', '#185FA5', '#3B6D11'];
+      new Chart(document.getElementById('origensChart'), {
+        type: 'doughnut',
+        data: {labels: Object.keys(origens), datasets: [{data: Object.values(origens), backgroundColor: colors}]},
+        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}
+      });
+    }
+
+    function renderMetaChart(meta) {
+      const m = meta[0] || {};
+      new Chart(document.getElementById('metaChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Impressões', 'Cliques', 'Leads'],
+          datasets: [{label: 'Qty', data: [m.impressions || 0, m.clicks || 0, m.actions?.[0]?.value || 0], backgroundColor: ['#534AB7', '#BA7517', '#0F6E56']}]
+        },
+        options: {responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {legend: {display: false}}, scales: {x: {beginAtZero: true}}}
+      });
+    }
+
+    function renderFunilChart(leads) {
+      const etapas = {};
+      leads.forEach(l => {
+        const e = l.Conversao?.Funil || 'Indefinido';
+        etapas[e] = (etapas[e] || 0) + 1;
+      });
+      new Chart(document.getElementById('funilChart'), {
+        type: 'bar',
+        data: {labels: Object.keys(etapas), datasets: [{label: 'Leads', data: Object.values(etapas), backgroundColor: '#534AB7'}]},
+        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true}}}
+      });
+    }
+
+    function renderInsights(leads, sheets, meta) {
+      const t = leads.length;
+      let insights = [];
+      if (t > 50) insights.push('✓ Volume excelente: ' + t + ' leads');
+      else if (t < 20) insights.push('⚠ Volume baixo: ' + t + ' leads');
+      const m = meta[0];
+      if (m?.spend && m?.actions?.[0]?.value) insights.push('💰 CPL Meta: R$ ' + (m.spend / m.actions[0].value).toFixed(2));
+      document.getElementById('insightsList').innerHTML = insights.map(i => '<div class="insight-item">' + i + '</div>').join('') || '<div class="insight-item">Carregando insights...</div>';
+    }
+
+    loadDashboard();
+    setInterval(loadDashboard, 60000);
+  </script>
+</body>
+</html>
