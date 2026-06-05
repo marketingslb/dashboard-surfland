@@ -41,10 +41,8 @@
     </div>
     <div class="insights"><h3>📈 Insights & Recomendações</h3><div id="insightsList">Calculando insights...</div></div>
   </div>
-
   <script>
-    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwpE9M1eZmAENUfONSp0KXwsJNTseuG_esIeHWxgkPuza1LAWdO4sy3xwpfc1UAWrdq/exec';
-
+    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwslvVQUufKeose0mj8fkP4ABIvfOdrJZD16teeoLSYSfvClEUG5NKH2xXqvvjeZ1i1/exec';
     async function loadDashboard() {
       try {
         const res = await fetch(BACKEND_URL);
@@ -63,7 +61,6 @@
         document.getElementById('kpis').innerHTML = '<div class="loading" style="color: #A32D2D;">❌ Erro ao carregar</div>';
       }
     }
-
     function renderKPIs(leads, sheets, meta) {
       const total = leads.length;
       const novo = leads.filter(l => l.Novo === true).length;
@@ -78,7 +75,6 @@
         <div class="kpi-card"><div class="kpi-label">CAC médio</div><div class="kpi-value">R$ ${cac}</div></div>
       `;
     }
-
     function renderLeadsChart(leads) {
       const last30 = Array.from({length: 30}, (_, i) => {
         const d = new Date();
@@ -100,7 +96,6 @@
         options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true}}}
       });
     }
-
     function renderOrigensChart(leads) {
       const origens = {};
       leads.forEach(l => {
@@ -114,7 +109,6 @@
         options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}
       });
     }
-
     function renderMetaChart(meta) {
       const m = meta[0] || {};
       new Chart(document.getElementById('metaChart'), {
@@ -126,7 +120,6 @@
         options: {responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {legend: {display: false}}, scales: {x: {beginAtZero: true}}}
       });
     }
-
     function renderFunilChart(leads) {
       const etapas = {};
       leads.forEach(l => {
@@ -139,7 +132,6 @@
         options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true}}}
       });
     }
-
     function renderInsights(leads, sheets, meta) {
       const t = leads.length;
       let insights = [];
@@ -149,7 +141,6 @@
       if (m?.spend && m?.actions?.[0]?.value) insights.push('💰 CPL Meta: R$ ' + (m.spend / m.actions[0].value).toFixed(2));
       document.getElementById('insightsList').innerHTML = insights.map(i => '<div class="insight-item">' + i + '</div>').join('') || '<div class="insight-item">Carregando insights...</div>';
     }
-
     loadDashboard();
     setInterval(loadDashboard, 60000);
   </script>
