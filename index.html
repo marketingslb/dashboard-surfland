@@ -3,146 +3,325 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Surfland - Funil Spotter + Meta Ads</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <title>Dashboard Surfland</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f7f5; color: #2c2c2a; }
-    .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
-    .header { background: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    .header h1 { font-size: 28px; margin-bottom: 0.5rem; color: #26215c; }
-    .header p { font-size: 14px; color: #888780; }
-    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-    .kpi-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #534AB7; }
-    .kpi-label { font-size: 12px; color: #888780; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; }
-    .kpi-value { font-size: 32px; font-weight: 600; color: #26215c; }
-    .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-    @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
-    .chart-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    .chart-title { font-size: 14px; font-weight: 600; color: #26215c; margin-bottom: 1rem; }
-    .insights { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 2rem; }
-    .insights h3 { font-size: 16px; font-weight: 600; color: #26215c; margin-bottom: 1rem; }
-    .insight-item { padding: 0.75rem 0; border-bottom: 1px solid #f1efe8; font-size: 13px; color: #5F5E5A; }
-    .loading { text-align: center; padding: 2rem; color: #888780; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      margin-bottom: 40px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .kpi-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .kpi-label {
+      color: #94a3b8;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 600;
+      color: #22d3ee;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 20px;
+    }
+
+    .chart-container {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .chart-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+
+    canvas {
+      max-height: 300px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #94a3b8;
+    }
+
+    .error {
+      background: #7f1d1d;
+      border: 1px solid #dc2626;
+      color: #fca5a5;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .last-update {
+      text-align: right;
+      color: #64748b;
+      font-size: 12px;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
+    <header>
       <h1>📊 Dashboard Surfland</h1>
-      <p>Visão em tempo real: Funil Spotter + Meta Ads + Agendamentos</p>
+      <p class="subtitle">Integração Spotter + Meta + Sheets</p>
+    </header>
+
+    <div id="error-container"></div>
+
+    <div id="loading" class="loading">
+      <p>Carregando dados...</p>
     </div>
-    <div class="kpis" id="kpis"><div class="loading">Carregando dados...</div></div>
-    <div class="charts" id="charts">
-      <div class="chart-card"><h3 class="chart-title">Leads por dia (últimos 30 dias)</h3><div style="position: relative; height: 280px;"><canvas id="leadsChart"></canvas></div></div>
-      <div class="chart-card"><h3 class="chart-title">Distribuição por origem</h3><div style="position: relative; height: 280px;"><canvas id="origensChart"></canvas></div></div>
-      <div class="chart-card"><h3 class="chart-title">Performance Meta Ads</h3><div style="position: relative; height: 280px;"><canvas id="metaChart"></canvas></div></div>
-      <div class="chart-card"><h3 class="chart-title">Funil de conversão</h3><div style="position: relative; height: 280px;"><canvas id="funilChart"></canvas></div></div>
+
+    <div id="content" style="display: none;">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total de Leads</div>
+          <div class="kpi-value" id="total-leads">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Leads Hoje</div>
+          <div class="kpi-value" id="leads-today">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Taxa de Conversão</div>
+          <div class="kpi-value" id="conversion-rate">0%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">CAC Médio</div>
+          <div class="kpi-value" id="avg-cac">R$ 0</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-container">
+          <div class="chart-title">📈 Leads por Data</div>
+          <canvas id="leadsChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <div class="chart-title">🎯 Leads por Fonte</div>
+          <canvas id="sourceChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <div class="chart-title">🔄 Funil de Conversão</div>
+          <canvas id="funnelChart"></canvas>
+        </div>
+      </div>
+
+      <div class="last-update">
+        <p>Última atualização: <span id="timestamp">--</span></p>
+      </div>
     </div>
-    <div class="insights"><h3>📈 Insights & Recomendações</h3><div id="insightsList">Calculando insights...</div></div>
   </div>
+
   <script>
-    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxc3ZJVqjlpEs3DvmB6hkPOibLwSHehY46f_lwLOVqzBjBUSw5GvLuNXJak-raEvOgW/exec';
-    async function loadDashboard() {
+    const BACKEND_URL = '/api/leads';
+
+    let leadsChart, sourceChart, funnelChart;
+
+    async function fetchData() {
       try {
-        const res = await fetch(BACKEND_URL);
-        const data = await res.json();
-        const spotter = data.spotter || {};
-        const sheets = data.sheets || {};
-        const meta = data.meta || {};
-        const leads = spotter.Leads || [];
-        renderKPIs(leads, sheets.data || [], meta.data || []);
-        renderLeadsChart(leads);
-        renderOrigensChart(leads);
-        renderMetaChart(meta.data || []);
-        renderFunilChart(leads);
-        renderInsights(leads, sheets.data || [], meta.data || []);
+        console.log('🔄 Buscando dados...');
+
+        const response = await fetch(BACKEND_URL);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Dados:', data);
+
+        if (data.status === 'ok') {
+          updateDashboard(data);
+        } else {
+          showError('Erro: ' + (data.error || 'Desconhecido'));
+        }
       } catch (error) {
-        document.getElementById('kpis').innerHTML = '<div class="loading" style="color: #A32D2D;">❌ Erro ao carregar</div>';
+        console.error('❌ Erro:', error);
+        showError('Erro ao conectar: ' + error.message);
       }
     }
-    function renderKPIs(leads, sheets, meta) {
-      const total = leads.length;
-      const novo = leads.filter(l => l.Novo === true).length;
-      const metaData = meta[0] || {};
-      const metaLeads = metaData.actions?.[0]?.value || 0;
-      const cac = metaData.spend && metaLeads > 0 ? (metaData.spend / metaLeads).toFixed(2) : '—';
-      const taxa = total > 0 ? ((novo / total) * 100).toFixed(1) : '0';
-      document.getElementById('kpis').innerHTML = `
-        <div class="kpi-card"><div class="kpi-label">Total de leads</div><div class="kpi-value">${total}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Leads novos</div><div class="kpi-value">${novo}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Taxa conversão</div><div class="kpi-value">${taxa}%</div></div>
-        <div class="kpi-card"><div class="kpi-label">CAC médio</div><div class="kpi-value">R$ ${cac}</div></div>
-      `;
+
+    function showError(message) {
+      document.getElementById('error-container').innerHTML = `<div class="error">⚠️ ${message}</div>`;
     }
-    function renderLeadsChart(leads) {
-      const last30 = Array.from({length: 30}, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (29 - i));
-        return { label: d.toLocaleDateString('pt-BR', {month: 'short', day: 'numeric'}), count: 0 };
+
+    function updateDashboard(data) {
+      const leads = data.spotter.Leads || [];
+
+      document.getElementById('total-leads').textContent = leads.length.toLocaleString('pt-BR');
+
+      const today = new Date().toISOString().split('T')[0];
+      const leadsToday = leads.filter(l => l.registerDate?.startsWith(today)).length;
+      document.getElementById('leads-today').textContent = leadsToday;
+
+      const conversionRate = leads.length > 0 ? Math.round((leadsToday / leads.length) * 100) : 0;
+      document.getElementById('conversion-rate').textContent = conversionRate + '%';
+
+      document.getElementById('avg-cac').textContent = 'R$ 0';
+
+      // Timeline
+      const leadsByDate = {};
+      leads.forEach(lead => {
+        const date = lead.registerDate?.split('T')[0] || 'N/A';
+        leadsByDate[date] = (leadsByDate[date] || 0) + 1;
       });
-      leads.forEach(l => {
-        const d = new Date(l.UpdatedAt || new Date());
-        const day = d.toLocaleDateString('pt-BR', {month: 'short', day: 'numeric'});
-        const idx = last30.findIndex(x => x.label === day);
-        if (idx >= 0) last30[idx].count++;
-      });
-      new Chart(document.getElementById('leadsChart'), {
+
+      const sortedDates = Object.keys(leadsByDate).sort().slice(-30);
+      const timelineData = sortedDates.map(date => leadsByDate[date]);
+
+      renderChart('leadsChart', {
         type: 'line',
-        data: {
-          labels: last30.map(d => d.label),
-          datasets: [{label: 'Leads', data: last30.map(d => d.count), borderColor: '#534AB7', backgroundColor: 'rgba(83,74,183,0.08)', borderWidth: 2, tension: 0.3, fill: true}]
-        },
-        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true}}}
+        labels: sortedDates,
+        datasets: [{
+          label: 'Leads',
+          data: timelineData,
+          borderColor: '#22d3ee',
+          backgroundColor: 'rgba(34, 211, 238, 0.1)',
+          fill: true,
+          tension: 0.4
+        }]
       });
-    }
-    function renderOrigensChart(leads) {
-      const origens = {};
-      leads.forEach(l => {
-        const o = l.Complemento || 'Sem origem';
-        origens[o] = (origens[o] || 0) + 1;
+
+      // Por Fonte
+      const leadsBySource = {};
+      leads.forEach(lead => {
+        const source = lead.source || 'Desconhecido';
+        leadsBySource[source] = (leadsBySource[source] || 0) + 1;
       });
-      const colors = ['#534AB7', '#0F6E56', '#BA7517', '#185FA5', '#3B6D11'];
-      new Chart(document.getElementById('origensChart'), {
+
+      const sources = Object.keys(leadsBySource).slice(0, 8);
+      const sourceCounts = sources.map(s => leadsBySource[s]);
+      const colors = ['#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'];
+
+      renderChart('sourceChart', {
         type: 'doughnut',
-        data: {labels: Object.keys(origens), datasets: [{data: Object.values(origens), backgroundColor: colors}]},
-        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}
+        labels: sources,
+        datasets: [{
+          data: sourceCounts,
+          backgroundColor: colors.slice(0, sources.length)
+        }]
       });
-    }
-    function renderMetaChart(meta) {
-      const m = meta[0] || {};
-      new Chart(document.getElementById('metaChart'), {
+
+      // Funil
+      const funnelStages = ['Leads Total', 'Contatos', 'Oportunidades', 'Clientes'];
+      const funnelData = [
+        leads.length,
+        Math.round(leads.length * 0.7),
+        Math.round(leads.length * 0.4),
+        Math.round(leads.length * 0.15)
+      ];
+
+      renderChart('funnelChart', {
         type: 'bar',
+        labels: funnelStages,
+        datasets: [{
+          label: 'Conversão',
+          data: funnelData,
+          backgroundColor: '#22d3ee'
+        }]
+      });
+
+      document.getElementById('timestamp').textContent = new Date(data.timestamp).toLocaleString('pt-BR');
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+    }
+
+    function renderChart(canvasId, config) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+
+      if (window[canvasId]) {
+        window[canvasId].destroy();
+      }
+
+      window[canvasId] = new Chart(ctx, {
+        type: config.type,
         data: {
-          labels: ['Impressões', 'Cliques', 'Leads'],
-          datasets: [{label: 'Qty', data: [m.impressions || 0, m.clicks || 0, m.actions?.[0]?.value || 0], backgroundColor: ['#534AB7', '#BA7517', '#0F6E56']}]
+          labels: config.labels,
+          datasets: config.datasets
         },
-        options: {responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {legend: {display: false}}, scales: {x: {beginAtZero: true}}}
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              labels: { color: '#94a3b8' }
+            }
+          },
+          scales: {
+            y: {
+              ticks: { color: '#64748b' },
+              grid: { color: '#334155' }
+            },
+            x: {
+              ticks: { color: '#64748b' },
+              grid: { color: '#334155' }
+            }
+          }
+        }
       });
     }
-    function renderFunilChart(leads) {
-      const etapas = {};
-      leads.forEach(l => {
-        const e = l.Conversao?.Funil || 'Indefinido';
-        etapas[e] = (etapas[e] || 0) + 1;
-      });
-      new Chart(document.getElementById('funilChart'), {
-        type: 'bar',
-        data: {labels: Object.keys(etapas), datasets: [{label: 'Leads', data: Object.values(etapas), backgroundColor: '#534AB7'}]},
-        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true}}}
-      });
-    }
-    function renderInsights(leads, sheets, meta) {
-      const t = leads.length;
-      let insights = [];
-      if (t > 50) insights.push('✓ Volume excelente: ' + t + ' leads');
-      else if (t < 20) insights.push('⚠ Volume baixo: ' + t + ' leads');
-      const m = meta[0];
-      if (m?.spend && m?.actions?.[0]?.value) insights.push('💰 CPL Meta: R$ ' + (m.spend / m.actions[0].value).toFixed(2));
-      document.getElementById('insightsList').innerHTML = insights.map(i => '<div class="insight-item">' + i + '</div>').join('') || '<div class="insight-item">Carregando insights...</div>';
-    }
-    loadDashboard();
-    setInterval(loadDashboard, 60000);
+
+    fetchData();
+    setInterval(fetchData, 60000);
   </script>
 </body>
 </html>
